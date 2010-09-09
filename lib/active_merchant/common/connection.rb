@@ -41,6 +41,7 @@ module ActiveMerchant
     attr_accessor :wiredump_device
     attr_accessor :logger
     attr_accessor :tag
+    attr_accessor :ignore_http_status
     
     def initialize(endpoint)
       @endpoint     = endpoint.is_a?(URI) ? endpoint : URI.parse(endpoint)
@@ -48,6 +49,7 @@ module ActiveMerchant
       @read_timeout = READ_TIMEOUT
       @retry_safe   = RETRY_SAFE
       @verify_peer  = VERIFY_PEER
+      @ignore_http_status = false
     end
     
     def request(method, body, headers = {})
@@ -148,11 +150,15 @@ module ActiveMerchant
     end
     
     def handle_response(response)
-      case response.code.to_i
-      when 200...300
-        response.body
+      if @ignore_http_status then
+        return response.body 
       else
-        raise ResponseError.new(response)
+        case response.code.to_i
+        when 200...300
+          response.body
+        else
+          raise ResponseError.new(response)
+        end
       end
     end
     
